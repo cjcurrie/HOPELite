@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using Facebook.Unity;
 
 public class FacebookPanel : UIBase
@@ -8,7 +9,7 @@ public class FacebookPanel : UIBase
   {
     if (!FB.IsInitialized) {
       // Initialize the Facebook SDK
-      FB.Init(InitCallback, OnHideUnity);
+      FB.Init(InitCallback, OnHideUnity, "This is the auth response");
     }
     else {
       // Already initialized, signal an app activation App Event
@@ -22,6 +23,16 @@ public class FacebookPanel : UIBase
   {
     var perms = new List<string>(){"public_profile", "email", "user_friends"};
     FB.LogInWithReadPermissions(perms, AuthCallback);
+  }
+
+  private void InitCallback()
+  {
+
+  }
+
+  private void OnHideUnity(bool isHidden)
+  {
+    // Not sure whether the bool passed in here is actually isNotHidden
   }
 
   private void AuthCallback (ILoginResult result)

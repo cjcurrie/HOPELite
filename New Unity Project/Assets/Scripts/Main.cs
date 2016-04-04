@@ -21,18 +21,25 @@ public class Main : MonoBehaviour
   // Load scripts
   void InitializeScripts()
   {
+    // Web sockets
+    
+
+    // UI
     activeInterfaces = new UIBase[2];
     activeInterfaces[0] = interfaceObject.GetComponent<DashboardUI>();
     activeInterfaces[0].Initialize();
     activeInterfaces[1] = interfaceObject.GetComponent<FacebookPanel>();
     activeInterfaces[1].Initialize();
+
+    // Events
     eventProcessor = eventProcessorObject.GetComponent<EventProcessor>();
     eventProcessor.Initialize();
   }
 
   void OnGUI()
   {
-    currentUI.RenderGUI();
+    for (int i=0; i<activeInterfaces.Length; i++)
+      activeInterfaces[i].RenderGUI();
   }
 
 
