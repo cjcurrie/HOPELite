@@ -24,7 +24,6 @@ public class EventProcessor : MonoBehaviour
   }
   public IEnumerator DoProcessUI(EventBase e)
   {
-    Debug.Log("Begin UI Event");
     activeEvent = e;
     yield return StartCoroutine(e.Action());
     activeEvent = null;

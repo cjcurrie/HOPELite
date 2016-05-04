@@ -1,27 +1,62 @@
-// Imports
-var http = require('http').Server(app);
-var app = require('express')();
-var io = require('socket.io');
-
 // Definitions
 const PORT=2358; 
 
-app.listen(PORT, function(){
-  console.log('listening on *:'+PORT);
+var http = require('http'),
+    fs = require('fs'),
+    // NEVER use a Sync function except at start-up!
+    index = fs.readFileSync(__dirname + '/index.html');
+
+// Send index.html to all requests
+var app = http.createServer(function(req, res) {
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.end(index);
 });
 
-var ios = io.listen(app);
+// Socket.io server listens to our app
+var io = require('socket.io').listen(app);
 
-// Request/Response handling
-ios.sockets.on('connection', function(socket){
-  console.log('a user connected');
+// Send current time to all connected clients
+function sendTime() {
+    io.emit('time', { time: new Date().toJSON() });
+}
 
-  // Register disconnect callback
-  socket.on('disconnect', function(){
-    console.log('user disconnected');
-  });
+// Send current time every 10 secs
+setInterval(sendTime, 10000);
 
-  socket.on('message', function(msg){
-    console.log('message: ' + msg);
-  });
+// Emit welcome message on connection
+io.on('connection', function(socket) {
+    // Use socket to communicate with this particular client only, sending it it's own id
+    socket.emit('welcome', { message: 'Welcome!', id: socket.id });
+
+    socket.on('i am client', console.log);
 });
+
+app.listen(PORT);
+
+
+
+
+// === Other server functions ===
+process.on('uncaughtException', function (err) {
+    console.log(err);
+}); 
+
+var gracefulShutdown = function() {
+  console.log("\nReceived kill signal, shutting down gracefully.");
+  app.close(function() {
+    console.log("Closed out remaining connections.");
+    process.exit()
+  });
+  
+   // if after shutdown fails
+   setTimeout(function() {
+       console.error("Could not close connections in time, forcefully shutting down");
+       process.exit()
+  }, 10*1000);
+}
+
+// ============== Shell support ==================
+// Command typed into shell 
+process.on ('SIGTERM', gracefulShutdown);
+// ctrl-c 
+process.on ('SIGINT', gracefulShutdown);   

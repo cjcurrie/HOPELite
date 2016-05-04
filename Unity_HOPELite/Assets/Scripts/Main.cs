@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Main : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class Main : MonoBehaviour
   public GameObject interfaceObject, eventProcessorObject;
   UIBase[] activeInterfaces;
   EventProcessor eventProcessor;
+  ServerInterface serverInterface;
+  
 
   // Starting point of app
   public void Awake()
@@ -21,22 +24,31 @@ public class Main : MonoBehaviour
   // Load scripts
   void InitializeScripts()
   {
-    // Web sockets
-    ServerInterface.Initialize();
+    // --- Web sockets
+    serverInterface = new ServerInterface();
+    serverInterface.Initialize();
 
-    // UI
-    activeInterfaces = new UIBase[2];
-    activeInterfaces[0] = interfaceObject.GetComponent<DashboardUI>();
-    activeInterfaces[0].Initialize();
-    activeInterfaces[1] = interfaceObject.GetComponent<FacebookPanel>();
-    activeInterfaces[1].Initialize();
+    // --- Interfaces
+    List<UIBase> interfaces = new List<UIBase>();
 
-    // Events
+    // Dashboard
+    UIBase dashboard = interfaceObject.GetComponent<DashboardUI>();
+    dashboard.Initialize();
+    interfaces.Add(dashboard);
+
+    // Facebook
+    UIBase facebookPanel = interfaceObject.GetComponent<FacebookPanel>();
+    dashboard.Initialize();
+    interfaces.Add(dashboard);
+
+    activeInterfaces = interfaces.ToArray();
+
+    // --- Events
     eventProcessor = eventProcessorObject.GetComponent<EventProcessor>();
     eventProcessor.Initialize();
 
-    // Get main page content
-    ServerInterface.SendMessage("GetContent");
+    // --- Get main page content
+    //Debug.Log("pinging server for content....");
   }
 
   void OnGUI()

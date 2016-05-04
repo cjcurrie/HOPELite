@@ -1,60 +1,89 @@
 ﻿using UnityEngine;
 using System.Collections;
-using SocketIOClient;
+//using SocketIOClient;
+using SocketIO;
+using System;
+using System.Collections.Generic;
 
-public static class ServerInterface
+public class ServerInterface
 {
-  static Client client;
-  static string url = "localhost:2358/";
+  //Client client;
+  string url = "localhost:2358/";
+  SocketIOComponent socket;
 
-  public static void Initialize()
+  public void Initialize()
   {
+    GameObject go = GameObject.Find("SocketIO");
+    socket = go.GetComponent<SocketIOComponent>();
+
+    socket.Connect();
+
+    // Register callbacks
+    socket.On("message", OnMessage);
+
+    // Send first contact to server
+    socket.Emit("connection");
+
+    // Log in
+    Dictionary<string,string> login = new Dictionary<string,string>();
+    login["username"] = "cjcurrie";
+    socket.Emit("login", new JSONObject(login));
+
+    /*
     client = new Client(url);
 
-    client.Opened += SocketOpened;
+    client.Opened += OnSocketOpened;
     client.Message += SocketMessage;
     client.SocketConnectionClosed += SocketConnectionClosed;
     client.Error +=SocketError;
 
     client.Connect();
+    */
   }
 
-  public static void SendMessage(string message)
+  public void OnMessage(SocketIOEvent e)
+  {
+    Debug.Log(string.Format("[{0}: {1}]", e.data["source"], e.data["text"]));
+  }
+
+  /*
+  public void SendMessage(string message)
   {
     client.Emit("message", message);
   }
 
-  public static void DeInitialize()
+  public void DeInitialize()
   {
     client.Close();
   }
 
   // Callbacks
-  static void SocketOpened(object sender, SocketIOClient.MessageEventArgs e)
+  public void OnSocketOpened(object sender, EventArgs e)
   {
     Debug.Log("Socket opened: "+e);
   }
 
-  static void SocketMessage (object sender, System.EventArgs e)
+  void SocketMessage (object sender, MessageEventArgs e)
   {
     if ( e!= null)
     {
       if (e.Message.Event == "message") {
         string msg = e.Message.MessageText;
-        process(msg);
+        Debug.Log("Received message: "+msg);
       }
       else
         Debug.Log("Got non-message event from server.");
     }
   }
 
-  static void SocketConnectionClosed(object sender, System.EventArgs e)
+  void SocketConnectionClosed(object sender, EventArgs e)
   {
-    Debug.Log("Socket connection closed: "+e);
+    Debug.Log("Socket connection closed: "+e.ToString());
   }
 
-  static void SocketError(object sender, System.EventArgs e)
+  void SocketError(object sender, ErrorEventArgs e)
   {
-    Debug.LogError("Socket error: "+e);
+    Debug.LogError("Socket error: "+e.Message);
   }
+  */
 }
