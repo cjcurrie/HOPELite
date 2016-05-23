@@ -1,39 +1,99 @@
-// Definitions
-const PORT=2358; 
+var express = require('express');
+var app = express();
+app.use('/', express.static(__dirname + '/public'));
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+var AWS = require('aws-sdk');
 
-var http = require('http'),
-    fs = require('fs'),
-    // NEVER use a Sync function except at start-up!
-    index = fs.readFileSync(__dirname + '/index.html');
+// --- Local scripts
+var db = require('./scripts/DBHelper.js');
 
-// Send index.html to all requests
-var app = http.createServer(function(req, res) {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.end(index);
+// === Config ===
+const PORT = 8080;
+
+app.get('/', function(req, res){
+  res.sendFile('index.html');
 });
 
-// Socket.io server listens to our app
-var io = require('socket.io').listen(app);
 
-// Send current time to all connected clients
-function sendTime() {
-    io.emit('time', { time: new Date().toJSON() });
-}
-
-// Send current time every 10 secs
-setInterval(sendTime, 10000);
-
-// Emit welcome message on connection
-io.on('connection', function(socket) {
-    // Use socket to communicate with this particular client only, sending it it's own id
-    socket.emit('welcome', { message: 'Welcome!', id: socket.id });
-
-    socket.on('i am client', console.log);
+// === Server startup ===
+http.listen(PORT, function(){
+  console.log('listening on *:8080');
 });
 
-app.listen(PORT);
+
+// === Sockets ===
+io.on('connection', function(socket){
+  console.log('a user connected');
+
+  // Connection sequence
+  socket.emit('serverMsg', 'Welcome to HOPELite!');
+  
+  socket.emit('optionList', {
+    opt1:{text:'Log in', action:'login'},
+    opt2:{text:'Say Hello to everyone', action:'broadcast'}
+  });
+  
+  // === Register Callbacks ===
+  socket.on('disconnect', function(){
+    console.log('user disconnected');
+  });
+  socket.on('getContent', function(req){
+    switch(req['type'])
+    {
+      case 'morningQuestionnaire':
+        console.log("fetching morning content for "+req['auth'].username);
+        
+      break;
+      case 'eveningQuestionnaire':
+
+      break;
+    }
+  });
+
+  socket.on('login', function(req)
+  {
+    switch (req['type'])
+    {
+      case 'normal':
+        db.TryLogin(req['username'], req['password'], function(status){
+          console.log(status);
+          socket.emit('login-response', status);
+        });
+      break;
+      case 'facebook':
+      break;
+      default:
+        console.log("error: bad login request");
+    }
+
+    // @TODO: extend short-term fb user access token into long-term?
+  });
 
 
+  // Testing commands
+  socket.Respond = function(msg){
+    socket.emit('serverMsg', msg);
+  }
+  socket.on('scan', function(){
+    db.Scan(socket.Respond);
+  });
+  socket.on('get', function(){
+    db.GetItem('cjcurrie', socket.Respond);
+  });
+  socket.on('put', function(){
+    db.PutItem(socket.Respond);
+  });
+  socket.on('createMaster', function(){
+    db.CreateMasterUser(socket.Respond);
+  });
+  socket.on('list', function(){
+    db.ListTables(socket.Respond);
+  });
+  socket.on('create table', function(){
+    db.CreateTable(socket.Respond);
+  });
+});
 
 
 // === Other server functions ===
@@ -43,17 +103,18 @@ process.on('uncaughtException', function (err) {
 
 var gracefulShutdown = function() {
   console.log("\nReceived kill signal, shutting down gracefully.");
-  app.close(function() {
+  http.close(function() {
     console.log("Closed out remaining connections.");
     process.exit()
   });
   
-   // if after shutdown fails
+   //if after shutdown fails
    setTimeout(function() {
        console.error("Could not close connections in time, forcefully shutting down");
        process.exit()
-  }, 10*1000);
+  }, 1*1000);
 }
+
 
 // ============== Shell support ==================
 // Command typed into shell 

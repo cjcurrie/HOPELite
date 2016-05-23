@@ -13,60 +13,39 @@
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
+      #viewArea {padding:50px;}
+      #login {hidden:true; float:center}
+      #messageArea {float:center}
+      .button-green {background: #5b8200;}
+      .serverOption {background: #DEDEDE;}
     </style>
-  </head>
 
-  <body>
-    <span>Status: <div id="status"></div></span>
-    </br>
-
-    <ul id="messages"></ul>
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
 
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/js/facebook.js"></script>
-    <script>
-      function ParseRemoteOption(option)
-      {
-        console.log(option['action']);
-        switch (option['action'])
-        {
-          case 'login':
-            return '<fb:login-button scope="public_profile,email" onlogin="checkLoginState();"></fb:login-button>';
-          break;
+    <script src="/index.js"></script>
 
-          case 'broadcast':
-            console.log('broadcast');
-            return '<button type="button">'+option['text']+'</button>';
-          break;
+  </head>
 
-          default: return '';
-        }
-      }
-    </script>
-    <script>
-      var socket = io();
-      $('form').submit(function(){
-        socket.emit('clientMsg', $('#m').val().toSring());
-        $('#m').val('');
-        return false;
-      });
-      socket.on('serverMsg', function(msg){
-        $('#messages').append($('<li>').text(msg));
-      });
-      socket.on('optionList', function(options){
-        var htmlString = 'Server offers the following actions:<div>';
+  <body>
+    <span>Status: <div id="status">You must first log in.</div></span>
+    </br>
+
+    <div id="viewArea">
+      <div id="messageArea">
+        <ul id="messages"></ul>
+      </div>
+
+      <div id="login">
         
-        for (var opt in options)
-        {
-          //if (!p.hasOwnProperty(key)) continue;
-          htmlString += ParseRemoteOption(options[opt]);
-        }
-        htmlString += '</div>';
-        $('#messages').append($('<li>').html(htmlString));
-      });
-    </script>
+      </div>
+    </div>
+
+    <form id="command" onsubmit="ParseInput($('#m').val()); $('#m').val(''); return false;" action="">
+      <input id="m" autocomplete="off" /><button type='button'>Send</button>
+    </form>
+    </br >
+    </br >
+    </br >
   </body>
 </html>
